@@ -1,0 +1,78 @@
+#!/bin/sh
+
+CUR_USER=`whoami`;
+if [ $CUR_USER != 'webroot' ];
+then
+	echo "error: need to be installed under the webroot account.";
+	exit;
+fi
+
+ARGNUM=$#
+if [ $ARGNUM -eq 0 ];
+then
+	echo "usage: ./INSTALL [username]"
+	exit;
+fi;
+
+USERNAME=$1;
+ERR=`sudo useradd -m $USERNAME -g users -d /data/home/$USERNAME 2>&1`
+if [ -n "$ERR" ];
+then
+	echo -e "[\033[31;1mERR\033[0m] add develop user fail, $ERR";
+	exit;
+fi;
+echo "$USERNAME@dev" | sudo passwd $USERNAME --stdin >/dev/null
+
+sudo mkdir /data/home/$USERNAME/.subversion
+
+mkdir -p ~/.$USERNAME/project
+cd ~/.$USERNAME/project
+
+echo "[global]" > ~/.$USERNAME/servers
+echo "http-proxy-host = 10.123.119.69" >> ~/.$USERNAME/servers
+echo "http-proxy-port = 80" >> ~/.$USERNAME/servers
+
+sudo mv ~/.$USERNAME/servers /data/home/$USERNAME/.subversion/
+
+echo -e "[\033[32;1mDONE\033[0m] add user $USERNAME"
+echo -en "[\033[33;1mSVN\033[0m] enter the svn password:"
+read -s PWD
+
+echo ""
+echo -e "[\033[33;1mSVN\033[0m] check out \033[35;1mhttp://bj-scm.tencent.com/web/web_qqnews_rep/QQNews_Server_proj/trunk/qqnews_rec/RecommenderSystem\033[0m"
+
+ERR=`svn info http://bj-scm.tencent.com/web/web_qqnews_rep/QQNews_Server_proj/trunk/qqnews_rec/RecommenderSystem --username $USERNAME --password $PWD --non-interactive 2>&1`;
+SVN_FAIL=`echo "$ERR" | grep -Eo "failed"`
+if [ "$SVN_FAIL" = "failed" ];
+then
+	echo -e "[\033[31;1mERR\033[0m] check out svn fail, $ERR";
+	sudo userdel -r $USERNAME;
+	exit;
+fi;
+
+svn co http://bj-scm.tencent.com/web/web_qqnews_rep/QQNews_Server_proj/trunk/qqnews_rec/RecommenderSystem --username $USERNAME --password $PWD --non-interactive
+
+echo -e "[\033[32;1mDONE\033[0m] work station initialize"
+
+if [ -z `sudo cat /etc/sudoers | grep -Eo "$USERNAME"` ];
+then
+	sudo sh -c "echo '$USERNAME ALL=NOPASSWD:ALL' >> /etc/sudoers"
+fi;
+
+sudo cp -r ~/.$USERNAME/project/RecommenderSystem/.vim /data/home/$USERNAME/
+sudo cp ~/.$USERNAME/project/RecommenderSystem/.vimrc /data/home/$USERNAME/
+sudo mv ~/.$USERNAME/project /data/home/$USERNAME/
+rm -rf ~/.$USERNAME
+
+sudo rm -f /data/home/$USERNAME/.bashrc
+sudo ln -s /data/home/$USERNAME/project/RecommenderSystem/.bashrc /data/home/$USERNAME/.bashrc
+
+cd ~/
+sudo chown -R $USERNAME /data/home/$USERNAME
+sudo chgrp -R users /data/home/$USERNAME
+
+echo -e "[\033[32;1mDONE\033[0m] add user '\033[33;1m$USERNAME\033[0m' and install project success, default password is '\033[33;1m$USERNAME@dev\033[0m'"
+
+
+
+

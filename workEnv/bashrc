@@ -1,0 +1,54 @@
+# .bash_profile
+
+# Get the aliases and functions
+if [ -f /etc/.bashrc ]; then
+	. /etc/.bashrc
+fi
+
+# Get the git auto-completion feature 
+if [ -f /etc/bash_completion.d/git ]; then
+	source /etc/bash_completion.d/git
+fi
+
+# User specific environment and startup programs
+
+IP=$(ifconfig eth1 | grep -Eo "addr:10[.0-9]+" | grep -Eo "[0-9.]+")
+if test -z "$IP"
+then
+    IP=$(hostname | awk -F. ' {print $1} ')
+fi
+export PS1="\u@$IP:\w>"
+export PROMPT_COMMAND='printf "\033]0;%s@%s\007" "${USER}" "${IP}"'
+
+alias ..='cd ..'
+alias ...='cd ../..'
+alias loginer='ps -ef | grep -Eo "sshd: [a-zA-Z0-9]+" | grep -Eo " [a-zA-Z0-9]+" | grep -Eo "[a-zA-Z0-9]+" | sort | uniq'
+
+alias b='blade build'
+alias bv='blade build --verbose'
+alias c='blade clean'
+alias d='blade build -p debug'
+alias dv='blade build -p debug --verbose'
+alias t='blade test'
+
+alias l='ls -alF'
+alias la='ls -la'
+alias ll='ls -l --color'
+alias lt='ls -lFhtr'
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/:~/project/RecommenderSystem/thirdparty/protobuf/bin/
+export VISUAL="vim"
+export BLADE_AUTO_UPGRADE=no
+export PATH=$PATH:/data/service/tools/bin/:~/project/RecommenderSystem/thirdparty/typhoon-blade/:~/project/RecommenderSystem/thirdparty/gperftools-2.6.1/bin:~/project/RecommenderSystem/thirdparty/protobuf/bin/:~/project/RecommenderSystem/thirdparty/mcp++_2.3.7/bin/:~/project/RecommenderSystem/thirdparty/cpplint/
+test -s ~/project/RecommenderSystem/thirdparty/typhoon-blade/bladefunctions && . ~/project/RecommenderSystem/thirdparty/typhoon-blade/bladefunctions || true
+
+function code()
+{
+    if [[ $# -gt 1 ]];then
+        find $2 -regex ".*php\|.*py\|.*BUILD\|.*\.c\|.*\.h\|.*\.cpp\|.*\.hpp\|.*\.hh\|.*\.cc\|.*\.lua" | xargs grep --color -nrE "$1"
+    else
+        find . -regex ".*php\|.*py\|.*BUILD\|.*\.c\|.*\.h\|.*\.cpp\|.*\.hpp\|.*\.hh\|.*\.cc\|.*\.lua" | xargs grep --color -nrE "$1"
+    fi  
+}
+
+

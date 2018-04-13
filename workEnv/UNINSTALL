@@ -1,0 +1,19 @@
+#!/bin/sh
+
+CUR_USER=`whoami`;
+if [ $CUR_USER != 'webroot' ];
+then
+	echo "error: need to be installed under the webroot account.";
+	exit;
+fi
+
+ARGNUM=$#
+if [ $ARGNUM -eq 0 ];
+then
+	echo "usage: ./UNINSTALL [username]"
+	exit;
+fi;
+
+USERNAME=$1;
+sudo userdel -r $USERNAME
+
